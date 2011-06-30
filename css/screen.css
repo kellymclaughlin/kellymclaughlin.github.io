@@ -17,8 +17,6 @@ html, body {
 
 body {
   text-align: center;
-  font-family: "Lucida Grande",Verdana,Arial,sans-serif;
-  font: 13.34px helvetica, arial, clean, sans-serif;
   font-size: 90%;
   margin: 0;
   padding: 1.5em 4em 2em 4em;
@@ -90,6 +88,7 @@ ul.posts {
 /*****************************************************************************/
 
 .site {
+  font-family: 'Coda', serif;
   font-size: 110%;
   text-align: justify;
   width: 55em;
@@ -102,8 +101,11 @@ ul.posts {
   font-weight: bold;
   color: #193d79;
   margin: 0.5em 1em 1em 1.5em;
-  padding-top: 1.0em;
-  border-bottom: 3px solid #eee;
+  padding-top: 2.0em;
+}
+
+.site .title h1 {
+  text-shadow: 4px 4px 4px #aaa;
 }
 
 .site .title a {
@@ -159,11 +161,27 @@ ul.posts {
     border: 0;
 }
 
+.content {
+  font-family: 'Expletus Sans', serif;
+  border-top: 3px solid #eee;
+  padding-top: 1em;
+  padding-left: 2em;
+  padding-right: 2em;
+}
+
+.content a {
+  text-decoration: none;
+}
+
+.content h1 {
+  font-size: 1.5em;
+}
+
 /*****************************************************************************/
 /*
-  /* Posts
-  /*
-  /*****************************************************************************/
+/* Posts
+/*
+/*****************************************************************************/
 
 #post {
 }
