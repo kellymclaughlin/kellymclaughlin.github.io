@@ -18,10 +18,12 @@ Very briefly, here is enough about how property-based testing with
 Quickcheck works to whet your appetite. When doing property-based
 testing you specify a set of properties of the code you are testing,
 create a model, and then test if the model holds for all (or a large
-number) of permutations of those properties. My coworker Rusty
-Klophaus published a very good 3-minute podcast on property-based
-testing [here](http://riak.minutewith.com/pages/20110128) that you
-_should_ listen to now if you have not already.
+number) of permutations of those properties.
+
+My coworker Rusty Klophaus published a very good 3-minute podcast on
+property-based testing
+[here](http://riak.minutewith.com/pages/20110128) that you _should_
+listen to now if you have not already.
 
 The full version of Quickcheck requires a license which I am fortunate
 enough to be able to use when testing code for
