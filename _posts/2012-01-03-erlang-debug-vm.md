@@ -38,7 +38,8 @@ it. The script expects an argument that specifies the version of
 Erlang to build. *e.g.* If you saved the script as `build_erlang.sh`,
 you would run the following: `build_erlang.sh R15B`.
 
-``
+<pre>
+<code>
 #! /bin/bash
 
 OTPVERUC:=$(echo $1 || if=- conv=ucase)
@@ -60,7 +61,8 @@ mv otp_src_$OTPVERUC{,-64}
 
 ## Build 64-bit version
 build_64
-``
+</code>
+</pre>
 
 Once the normal build has successfully completed, it's time to do the
 debug build. `cd` to the unpacked erlang source directory
