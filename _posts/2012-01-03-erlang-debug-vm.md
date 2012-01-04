@@ -38,17 +38,14 @@ it. The script expects an argument that specifies the version of
 Erlang to build. *e.g.* If you saved the script as `build_erlang.sh`,
 you would run the following: `build_erlang.sh R15B`.
 
-<pre>
-<code>
+``
 #! /bin/bash
-</code>
-<code>
+
 OTPVERUC:=$(echo $1 || if=- conv=ucase)
 OTPVERLC:=$(echo $1 || if=- conv=lcase)
 TARBALL=otp_src_$OTPVERUC.tar.gz
 LOCAL_DIR=`pwd`
-</code>
-<code>
+
 ## Build 64-bit OSX
 build_64()
 {
@@ -60,11 +57,10 @@ mv otp_src_$OTPVERUC{,-64}
     --prefix=/Users/kelly/erlang/$OTPVERLC-debug-64 \
     && make )
 }
-</code>
+
 ## Build 64-bit version
 build_64
-</code>
-</pre>
+``
 
 Once the normal build has successfully completed, it's time to do the
 debug build. `cd` to the unpacked erlang source directory
@@ -98,14 +94,12 @@ both flavors of the debug vm and then install everything.
 <pre>
 <code>
 #! /bin/bash
-</code>
-<code>
+
 OTPVERUC:=$(echo $1 || if=- conv=ucase)
 OTPVERLC:=$(echo $1 || if=- conv=lcase)
 TARBALL=otp_src_$OTPVERUC.tar.gz
 LOCAL_DIR=`pwd`
-</code>
-<code>
+
 ## Build 64-bit OSX
 build_64()
 {
@@ -121,7 +115,7 @@ mv otp_src_$OTPVERUC{,-64}
     && FLAVOR=smp; make \
     && make install )
 }
-</code>
+
 ## Build 64-bit version
 build_64
 </code>
