@@ -38,8 +38,7 @@ it. The script expects an argument that specifies the version of
 Erlang to build. *e.g.* If you saved the script as `build_erlang.sh`,
 you would run the following: `build_erlang.sh R15B`.
 
-<pre>
-<code>
+{% highlight bash %}
 #! /bin/bash
 
 OTPVERUC:=$(echo $1 || if=- conv=ucase)
@@ -61,8 +60,7 @@ mv otp_src_$OTPVERUC{,-64}
 
 ## Build 64-bit version
 build_64
-</code>
-</pre>
+{% endhighlight %}
 
 Once the normal build has successfully completed, it's time to do the
 debug build. `cd` to the unpacked erlang source directory
@@ -93,8 +91,7 @@ Of course a simplified approach would just be to script all of these
 steps, so here is the previous build script augmented to also build
 both flavors of the debug vm and then install everything.
 
-<pre>
-<code>
+{% highlight bash %}
 #! /bin/bash
 
 OTPVERUC:=$(echo $1 || if=- conv=ucase)
@@ -120,8 +117,7 @@ mv otp_src_$OTPVERUC{,-64}
 
 ## Build 64-bit version
 build_64
-</code>
-</pre>
+{% endhighlight %}
 
 That's all there is to it. In the next post I will cover how configure
 [Riak](http://www.basho.com) to run using the debug-enabled version of
