@@ -5,10 +5,11 @@ title: Setting up the Emacs daemon on OS X
 
 # Setting up the Emacs daemon on OS X
 
-*Warning* I only use terminal emacs so I have no idea how well this will work otherwise.
+*Warning:* I only use terminal emacs so I have no idea how well this will work otherwise.
 
 ## Install emacs 23 or later.
 Here is what I use to get the very latest emacs goodies:
+
 ```
 sudo brew install emacs --cocoa --use-git-head --HEAD
 ```
@@ -20,6 +21,7 @@ if you do not want the bleeding edge version, then omit the
 
 ## Create a plist file and move it to ~/Library/LaunchAgents
 Here is what my file looks like:
+
 ```
 <?xml version="1.0" encoding="UTF-8"?>
   <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -55,6 +57,7 @@ launchctl start gnu.emacs.daemon
 Instead of opening a file with `emacs <filename>` instead use `emacsclient -nw <filename>`.
 
 I created a handy alias in my `.bashrc` file.
+
 ```
 alias e="emacsclient -nw"
 ```
@@ -64,6 +67,7 @@ alias e="emacsclient -nw"
 From within emacs, use the `save-buffers-kill-emacs` command.
 
 Outside of emacs:
+
 ```
 emacsclient -e '(client-save-kill-emacs)'
 ```
