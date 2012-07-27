@@ -22,8 +22,7 @@ if you do not want the bleeding edge version, then omit the
 ## Create a plist file and move it to ~/Library/LaunchAgents
 Here is what my file looks like:
 
-<code>
-<pre>
+{% highlight xml %}
 <?xml version="1.0" encoding="UTF-8"?>
   <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
   <plist version="1.0">
@@ -43,8 +42,7 @@ Here is what my file looks like:
       <string>kelly</string>
     </dict>
   </plist>
-</pre>
-</code>
+{% endhighlight %}
 
 Update the path the emacs and change the username to your OS X user name.
 
