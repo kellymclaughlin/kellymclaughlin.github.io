@@ -1,0 +1,332 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>How to Build a Debug Version of the Erlang VM - kelly-mclaughlin.com</title>
+  <meta name="author" content="Kelly McLaughlin">
+
+  
+  <meta name="description" content="Last week I needed a debug build of BEAM (the Erlang VM). I decided to
+write this blog post detailing how to go about building it because I
+found the &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://kelly-mclaughlin.com/blog/2012/01/03/erlang-debug-vm">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="http://feeds.feedburner.com/KellyMcLaughlin" rel="alternate" title="kelly-mclaughlin.com" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">kelly-mclaughlin.com</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/KellyMcLaughlin" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:kelly-mclaughlin.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">How to Build a Debug Version of the Erlang VM</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-01-03T00:00:00-07:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Last week I needed a debug build of BEAM (the Erlang VM). I decided to
+write this blog post detailing how to go about building it because I
+found the process to be cumbersome and the documentation detailing how
+to do it rather sparse. There is a section in the
+<a href="http://www.erlang.org/doc/installation_guide/INSTALL.html#id70822">Erlang documentation</a>
+that discusses how to build a debug-enabled Erlang runtime, but I
+found the procedures I will discuss in this post to be more
+straightforward. Hopefully my experience can help others who may
+venture down this path, but if nothing else it will serve as a useful
+reminder for myself the next time I need to do it.</p>
+
+<p>Before starting I should note that all of the following steps have
+been performed on my MBP running OSX Lion and using Erlang R15B.</p>
+
+<p>To start things off you&rsquo;ll need to have the Erlang source. Grab the latest
+version from <a href="http://www.erlang.org/download.html">here</a> if you do not
+already have it. You may want to move the source tarball into an
+<em>erlang</em> sub-directory somewhere to keep everything organized.</p>
+
+<p>Next let&rsquo;s build normally. We will specify the installation
+destination as a local debug-labeled directory using the <code>--prefix</code>
+option to the Erlang/OTP <code>configure</code> script, but we will not install until after
+taking some extra steps to build debug versions of BEAM. One important
+thing to note is that I have disabled <code>HiPE</code> because I found it to
+cause build failures when building the debug versions.</p>
+
+<p>The following is a bash script that can be run to accomplish this
+first step. To run it, save the script to the local directory where
+you have the erlang source tarball, make it executable, and run
+it. The script expects an argument that specifies the version of
+Erlang to build. <em>e.g.</em> If you saved the script as <code>build_erlang.sh</code>,
+you would run the following: <code>build_erlang.sh R15B</code>.</p>
+
+<div>
+  <pre><code class='bash'>#! /bin/bash
+
+OTPVERUC:=$(echo $1 || if=- conv=ucase)
+OTPVERLC:=$(echo $1 || if=- conv=lcase)
+TARBALL=otp_src_$OTPVERUC.tar.gz
+LOCAL_DIR=`pwd`
+
+## Build 64-bit OSX
+build_64()
+{
+tar xfz $TARBALL
+mv otp_src_$OTPVERUC{,-64}
+( cd otp_src_$OTPVERUC-64 \
+    &amp;&amp; ./configure --enable-debug --enable-threads --enable-kernel-poll \
+    --enable-smp-support --enable-darwin-64bit --enable-lock-checking=no --disable-hipe \
+    --prefix=/Users/kelly/erlang/$OTPVERLC-debug-64 \
+    &amp;&amp; make )
+}
+
+## Build 64-bit version
+build_64</code></pre>
+</div>
+
+
+<p>Once the normal build has successfully completed, it&rsquo;s time to do the
+debug build. <code>cd</code> to the unpacked erlang source directory
+(<em>otp_src_R15B-64</em> if using the script from above). The next step is
+to export a three environment variables in your shell. The first is
+<code>ERL_TOP</code> which serves as a reference for many of the build files and
+scripts. Next is the <code>FLAVOR</code> and the options are either <code>plain</code> or
+<code>smp</code>. Finally <code>TYPE</code> should be set to <code>debug</code>.</p>
+
+<pre>
+<code>
+export ERL_TOP=`pwd`
+export FLAVOR=smp
+export TYPE=debug
+</code>
+</pre>
+
+
+<p>Now type <code>make</code> and hit enter and wait. Once the build is complete,
+there should be a <code>beam.debug.smp</code> file in addition to the normal
+<code>beam.smp</code> (assuming you set the FLAVOR as smp). To build the other
+flavor, just change the value of <code>FLAVOR</code> and run make again.</p>
+
+<p>The final step is to install everything. Do this by typing <code>make
+install</code> and once it completes Erlang/OTP will be installed in
+<em>R15B-debug-64</em> including debug-enabled builds of BEAM.</p>
+
+<p>Of course a simplified approach would just be to script all of these
+steps, so here is the previous build script augmented to also build
+both flavors of the debug vm and then install everything.</p>
+
+<div>
+  <pre><code class='bash'>#! /bin/bash
+
+OTPVERUC:=$(echo $1 || if=- conv=ucase)
+OTPVERLC:=$(echo $1 || if=- conv=lcase)
+TARBALL=otp_src_$OTPVERUC.tar.gz
+LOCAL_DIR=`pwd`
+
+## Build 64-bit OSX
+build_64()
+{
+tar xfz $TARBALL
+mv otp_src_$OTPVERUC{,-64}
+( cd otp_src_$OTPVERUC-64 \
+    &amp;&amp; ./configure --enable-debug --enable-threads --enable-kernel-poll \
+    --enable-smp-support --enable-darwin-64bit --disable-hipe \
+    --prefix=$LOCAL_DIR/$OTPVERLC-debug-64 \
+    &amp;&amp; make \
+    &amp;&amp; make install \
+    &amp;&amp; export TYPE=debug; export FLAVOR=plain; make \
+    &amp;&amp; FLAVOR=smp; make \
+    &amp;&amp; make install )
+}
+
+## Build 64-bit version
+build_64</code></pre>
+</div>
+
+
+<p>That&rsquo;s all there is to it. In the next post I will cover how configure
+<a href="http://www.basho.com">Riak</a> to run using the debug-enabled version of
+Erlang. Until then, happy coding.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Kelly McLaughlin</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-01-03T00:00:00-07:00" pubdate data-updated="true"></time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://kelly-mclaughlin.com/blog/2012/01/03/erlang-debug-vm/" data-via="_klm" data-counturl="http://kelly-mclaughlin.com/blog/2012/01/03/erlang-debug-vm/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2011/07/08/quickcheck-efficacy/" title="Previous Post: A Quickcheck in time saves nine">&laquo; A Quickcheck in time saves nine</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2012/01/21/riak-debug-vm/" title="Next Post: Running Riak with a debug version of the Erlang VM">Running Riak with a debug version of the Erlang VM &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/07/27/emacs-daemon/">Setting Up the Emacs Daemon on OS X</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/01/21/riak-debug-vm/">Running Riak With a Debug Version of the Erlang VM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/01/03/erlang-debug-vm/">How to Build a Debug Version of the Erlang VM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2011/07/08/quickcheck-efficacy/">A Quickcheck in Time Saves Nine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2011/06/29/inertia/">Inertia</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Kelly McLaughlin -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

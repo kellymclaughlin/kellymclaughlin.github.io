@@ -1,27 +1,434 @@
----
-layout: nil
----
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
- 
- <title>Kelly McLaughlin</title>
- <link href="http://kelly-mclaughlin.com/atom.xml" rel="self"/>
- <link href="http://kelly-mclaughlin.com/"/>
- <updated>{{ site.time | date_to_xmlschema }}</updated>
- <id>http://kelly-mclaughlin.com/</id>
- <author>
-   <name>Kelly McLaughlin</name>
-   <email>mclaughlin77@gmail.com</email>
- </author>
 
- {% for post in site.posts %}
- <entry>
-   <title>{{ post.title }}</title>
-   <link href="http://kelly-mclaughlin.com{{ post.url }}"/>
-   <updated>{{ post.date | date_to_xmlschema }}</updated>
-   <id>http://kelly-mclaughlin.com{{ post.id }}</id>
-   <content type="html">{{ post.content | xml_escape }}</content>
- </entry>
- {% endfor %}
- 
+  <title><![CDATA[kelly-mclaughlin.com]]></title>
+  <link href="http://kelly-mclaughlin.com/atom.xml" rel="self"/>
+  <link href="http://kelly-mclaughlin.com/"/>
+  <updated>2014-04-18T22:38:25-06:00</updated>
+  <id>http://kelly-mclaughlin.com/</id>
+  <author>
+    <name><![CDATA[Kelly McLaughlin]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Setting Up the Emacs Daemon on OS X]]></title>
+    <link href="http://kelly-mclaughlin.com/blog/2012/07/27/emacs-daemon/"/>
+    <updated>2012-07-27T00:00:00-06:00</updated>
+    <id>http://kelly-mclaughlin.com/blog/2012/07/27/emacs-daemon</id>
+    <content type="html"><![CDATA[<p><em>Warning:</em> I only use terminal emacs so I have no idea how well this will work otherwise.</p>
+
+<h2>Install emacs 23 or later.</h2>
+
+<p>Here is what I use to get the very latest emacs goodies:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo brew install emacs --cocoa --use-git-head --HEAD</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Some people have had trouble with the <code>--cocoa</code> flag so you may find
+it convenient to omit that if you do not need the Cocoa version. Also
+if you do not want the bleeding edge version, then omit the
+<code>--use-git-head --HEAD</code> options.</p>
+
+<h2>Create a plist file and move it to ~/Library/LaunchAgents</h2>
+
+<p>Here is what my file looks like:</p>
+
+<div>
+  <pre><code class='xml'>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+  &lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
+  &lt;plist version=&quot;1.0&quot;&gt;
+    &lt;dict&gt;
+      &lt;key&gt;Label&lt;/key&gt;
+      &lt;string&gt;gnu.emacs.daemon&lt;/string&gt;
+      &lt;key&gt;ProgramArguments&lt;/key&gt;
+      &lt;array&gt;
+        &lt;string&gt;/usr/local/Cellar/emacs/HEAD/Emacs.app/Contents/MacOS/Emacs&lt;/string&gt;
+        &lt;string&gt;--daemon&lt;/string&gt;
+      &lt;/array&gt;
+      &lt;key&gt;RunAtLoad&lt;/key&gt;
+      &lt;true/&gt;
+      &lt;key&gt;ServiceDescription&lt;/key&gt;
+      &lt;string&gt;Gnu Emacs Daemon&lt;/string&gt;
+      &lt;key&gt;UserName&lt;/key&gt;
+      &lt;string&gt;kelly&lt;/string&gt;
+    &lt;/dict&gt;
+  &lt;/plist&gt;</code></pre>
+</div>
+
+
+<p>Update the path the emacs and change the username to your OS X user name.</p>
+
+<h2>Start the daemon</h2>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>launchctl load gnu.emacs.daemon
+</span><span class='line'>launchctl start gnu.emacs.daemon</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Edit files with emacsclient instead of emacs</h3>
+
+<p>Instead of opening a file with <code>emacs &lt;filename&gt;</code> instead use <code>emacsclient -nw &lt;filename&gt;</code>.</p>
+
+<p>I created a handy alias in my <code>.bashrc</code> file.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>alias e="emacsclient -nw"</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Stopping the daemon</h3>
+
+<p>From within emacs, use the <code>save-buffers-kill-emacs</code> command.</p>
+
+<p>Outside of emacs:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>emacsclient -e '(save-buffers-kill-emacs)'</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Why bother?</h3>
+
+<p>Setting up the daemon has a several advantages.</p>
+
+<ol>
+<li>Files load much faster.</li>
+<li>You can share buffers among different <code>emacsclient</code> instances.</li>
+<li>If you exit all the <code>emacsclient</code> instances and come back later,
+your buffers are all still open. When you access a buffer the cursor
+will be at the exact spot you left off previously.</li>
+</ol>
+
+
+<h3>Downsides</h3>
+
+<p>The server does occasionally crash, but that is probably because I am
+using the bleeding edge version. It hasn&rsquo;t caused me to lose anything
+thanks to auto-saving and file recovery so go for it.</p>
+
+<h3>References</h3>
+
+<ul>
+<li><a href="http://www.emacswiki.org/emacs/EmacsAsDaemon">EmacsWiki</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Running Riak With a Debug Version of the Erlang VM]]></title>
+    <link href="http://kelly-mclaughlin.com/blog/2012/01/21/riak-debug-vm/"/>
+    <updated>2012-01-21T00:00:00-07:00</updated>
+    <id>http://kelly-mclaughlin.com/blog/2012/01/21/riak-debug-vm</id>
+    <content type="html"><![CDATA[<p>In this post I describe how the easiest way to run
+<a href="http://www.basho.com">Riak</a> with a debug build of the Erlang
+VM. While I focus specifically on Riak, this procedure should hold
+true for most Erlang projects that are set up for release builds using
+rebar.</p>
+
+<p>First, make sure the debug build of Erlang is the first in your
+path. If you have not built a debug-enabled Erlang VM, I covered how
+to accomplish that in a prior post and you can find it
+<a href="http://kelly-mclaughlin.com/2012/01/03/erlang-debug-vm.html">here</a>.</p>
+
+<p>Next navigate to your Riak repository and do a clean and release build
+of Riak.</p>
+
+<div>
+  <pre><code class='bash'>make clean rel</code></pre>
+</div>
+
+
+<p>Move to the Riak release directory and open the riak script in an editor.</p>
+
+<div>
+  <pre><code class='bash'>cd rel/riak
+emacs bin/riak</code></pre>
+</div>
+
+
+<p>Look for the line <code>EMU=beam</code>. It should be located somewhere around
+line 228 in the section for the <code>console</code> command. Change that line to
+<code>EMU=beam.debug</code> and save the file.</p>
+
+<p>Now you are ready to start up Riak. For this example I just start it
+with <em>console</em> instead of <em>start</em>.</p>
+
+<div>
+  <pre><code class='bash'>./bin/riak console</code></pre>
+</div>
+
+
+<p>You should notice the Erlang banner is slightly different than
+normal. Using the normal Erlang VM the banner looks something like
+this:</p>
+
+<div>
+  <pre><code class='erlang'>Erlang R15B (erts-5.9) [source] [64-bit] [smp:4:4] [async-threads:64] [kernel-poll:true]</code></pre>
+</div>
+
+
+<p>However using the debug-enabled VM, it should look something like the
+following:</p>
+
+<div>
+  <pre><code class='erlang'>Erlang R15B (erts-5.9) [source] [64-bit] [smp:4:4] [async-threads:64] [kernel-poll:true] [type-assertions] [debug-compiled] [lock-checking]</code></pre>
+</div>
+
+
+<p>And that&rsquo;s all there is to it. Once you have the debug-enabled Erlang
+VM built, it&rsquo;s very easy to get Riak up and running with it. It may go
+without saying, but Riak will run noticeably slower using the
+debug-enabled VM so please do not run in this manner in
+production. Happy debugging!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[How to Build a Debug Version of the Erlang VM]]></title>
+    <link href="http://kelly-mclaughlin.com/blog/2012/01/03/erlang-debug-vm/"/>
+    <updated>2012-01-03T00:00:00-07:00</updated>
+    <id>http://kelly-mclaughlin.com/blog/2012/01/03/erlang-debug-vm</id>
+    <content type="html"><![CDATA[<p>Last week I needed a debug build of BEAM (the Erlang VM). I decided to
+write this blog post detailing how to go about building it because I
+found the process to be cumbersome and the documentation detailing how
+to do it rather sparse. There is a section in the
+<a href="http://www.erlang.org/doc/installation_guide/INSTALL.html#id70822">Erlang documentation</a>
+that discusses how to build a debug-enabled Erlang runtime, but I
+found the procedures I will discuss in this post to be more
+straightforward. Hopefully my experience can help others who may
+venture down this path, but if nothing else it will serve as a useful
+reminder for myself the next time I need to do it.</p>
+
+<p>Before starting I should note that all of the following steps have
+been performed on my MBP running OSX Lion and using Erlang R15B.</p>
+
+<p>To start things off you&rsquo;ll need to have the Erlang source. Grab the latest
+version from <a href="http://www.erlang.org/download.html">here</a> if you do not
+already have it. You may want to move the source tarball into an
+<em>erlang</em> sub-directory somewhere to keep everything organized.</p>
+
+<p>Next let&rsquo;s build normally. We will specify the installation
+destination as a local debug-labeled directory using the <code>--prefix</code>
+option to the Erlang/OTP <code>configure</code> script, but we will not install until after
+taking some extra steps to build debug versions of BEAM. One important
+thing to note is that I have disabled <code>HiPE</code> because I found it to
+cause build failures when building the debug versions.</p>
+
+<p>The following is a bash script that can be run to accomplish this
+first step. To run it, save the script to the local directory where
+you have the erlang source tarball, make it executable, and run
+it. The script expects an argument that specifies the version of
+Erlang to build. <em>e.g.</em> If you saved the script as <code>build_erlang.sh</code>,
+you would run the following: <code>build_erlang.sh R15B</code>.</p>
+
+<div>
+  <pre><code class='bash'>#! /bin/bash
+
+OTPVERUC:=$(echo $1 || if=- conv=ucase)
+OTPVERLC:=$(echo $1 || if=- conv=lcase)
+TARBALL=otp_src_$OTPVERUC.tar.gz
+LOCAL_DIR=`pwd`
+
+## Build 64-bit OSX
+build_64()
+{
+tar xfz $TARBALL
+mv otp_src_$OTPVERUC{,-64}
+( cd otp_src_$OTPVERUC-64 \
+    &amp;&amp; ./configure --enable-debug --enable-threads --enable-kernel-poll \
+    --enable-smp-support --enable-darwin-64bit --enable-lock-checking=no --disable-hipe \
+    --prefix=/Users/kelly/erlang/$OTPVERLC-debug-64 \
+    &amp;&amp; make )
+}
+
+## Build 64-bit version
+build_64</code></pre>
+</div>
+
+
+<p>Once the normal build has successfully completed, it&rsquo;s time to do the
+debug build. <code>cd</code> to the unpacked erlang source directory
+(<em>otp_src_R15B-64</em> if using the script from above). The next step is
+to export a three environment variables in your shell. The first is
+<code>ERL_TOP</code> which serves as a reference for many of the build files and
+scripts. Next is the <code>FLAVOR</code> and the options are either <code>plain</code> or
+<code>smp</code>. Finally <code>TYPE</code> should be set to <code>debug</code>.</p>
+
+<pre>
+<code>
+export ERL_TOP=`pwd`
+export FLAVOR=smp
+export TYPE=debug
+</code>
+</pre>
+
+
+<p>Now type <code>make</code> and hit enter and wait. Once the build is complete,
+there should be a <code>beam.debug.smp</code> file in addition to the normal
+<code>beam.smp</code> (assuming you set the FLAVOR as smp). To build the other
+flavor, just change the value of <code>FLAVOR</code> and run make again.</p>
+
+<p>The final step is to install everything. Do this by typing <code>make
+install</code> and once it completes Erlang/OTP will be installed in
+<em>R15B-debug-64</em> including debug-enabled builds of BEAM.</p>
+
+<p>Of course a simplified approach would just be to script all of these
+steps, so here is the previous build script augmented to also build
+both flavors of the debug vm and then install everything.</p>
+
+<div>
+  <pre><code class='bash'>#! /bin/bash
+
+OTPVERUC:=$(echo $1 || if=- conv=ucase)
+OTPVERLC:=$(echo $1 || if=- conv=lcase)
+TARBALL=otp_src_$OTPVERUC.tar.gz
+LOCAL_DIR=`pwd`
+
+## Build 64-bit OSX
+build_64()
+{
+tar xfz $TARBALL
+mv otp_src_$OTPVERUC{,-64}
+( cd otp_src_$OTPVERUC-64 \
+    &amp;&amp; ./configure --enable-debug --enable-threads --enable-kernel-poll \
+    --enable-smp-support --enable-darwin-64bit --disable-hipe \
+    --prefix=$LOCAL_DIR/$OTPVERLC-debug-64 \
+    &amp;&amp; make \
+    &amp;&amp; make install \
+    &amp;&amp; export TYPE=debug; export FLAVOR=plain; make \
+    &amp;&amp; FLAVOR=smp; make \
+    &amp;&amp; make install )
+}
+
+## Build 64-bit version
+build_64</code></pre>
+</div>
+
+
+<p>That&rsquo;s all there is to it. In the next post I will cover how configure
+<a href="http://www.basho.com">Riak</a> to run using the debug-enabled version of
+Erlang. Until then, happy coding.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[A Quickcheck in Time Saves Nine]]></title>
+    <link href="http://kelly-mclaughlin.com/blog/2011/07/08/quickcheck-efficacy/"/>
+    <updated>2011-07-08T00:00:00-06:00</updated>
+    <id>http://kelly-mclaughlin.com/blog/2011/07/08/quickcheck-efficacy</id>
+    <content type="html"><![CDATA[<p>Today I am going to present some anecdotal evidence on the efficacy
+of property-based testing. The specific tool in this case is Quiviq&rsquo;s
+<a href="http://www.quviq.com/">Quickcheck</a>, a property-based testing tool for
+Erlang. I am not going to spend <em>much</em> time discussing the particulars
+of property-based testing, but instead focus on a specific real-world
+instance where it saved me and my employer,
+<a href="http://www.basho.com/">Basho</a>, time and money.</p>
+
+<h2>The Bare Essentials</h2>
+
+<p>Very briefly, here is enough about how property-based testing with
+Quickcheck works to whet your appetite. When doing property-based
+testing you specify a set of properties of the code you are testing,
+create a model, and then test if the model holds for all (or a large
+number) of permutations of those properties.</p>
+
+<p>My coworker Rusty Klophaus published a very good 3-minute podcast on
+property-based testing
+<a href="http://riak.minutewith.com/pages/20110128">here</a> that you <em>should</em>
+listen to now if you have not already.</p>
+
+<p>The full version of Quickcheck requires a license which I am fortunate
+enough to be able to use when testing code for
+<a href="http://www.basho.com/">Basho</a>. <a href="http://www.quviq.com/contact.html">Contact</a>
+Quiviq for more information about that or they also have a free
+version called QuickCheck Mini with a reduced feature set. There are
+also some open source property testing tools for Erlang such as
+<a href="https://github.com/manopapad/proper">PropEr</a>, but I do not have any
+first-hand experience using any of them.</p>
+
+<h2>Some Relevant Data</h2>
+
+<p>Here are a couple of tidbits that will help you follow the
+story if you are unfamiliar with how <a href="http://www.basho.com">Riak</a>
+works.
+ * In <a href="http://www.basho.com">Riak</a>, the data that is stored is divided among a set of partitions. Understanding the specifics of a partition is not important here, just understand that a partition is a place where data is stored and that to generate a list of all the object keys for a bucket in <a href="http://www.basho.com">Riak</a> requires accessing a subset of these partitions.
+ * The number of partitions is configurable.</p>
+
+<h2>Story Time</h2>
+
+<p>Last week I was working on some changes to how
+<a href="http://www.basho.com">Riak</a> manages key listing. I made the changes I
+thought were necessary to accomplish my task and did some preliminary
+manual testing. This involved inserting a set of objects into a bucket
+and then performing a key listing and verifying that results matched
+what I expected. This manual testing closely resembles the type of
+test cases I would likely create for this code using traditional unit
+tests. Pick a few different sizes of object sets and done. Most
+developers probably will not spend all day enumerating hundreds of
+test cases and the result is that the unit test suite only gives you
+assurance that your code works for a very small number of possible
+cases. So what about the rest of them? Well, let&rsquo;s continue the story.</p>
+
+<p>It turned out that there was some intermediate results buffering that
+I had not accounted for when I made my changes. Each partition would
+accumulate the object keys it had stored for a bucket, but once this
+buffer contained 100 keys it would send the keys back to the calling
+process, empty the buffer, and continue the accumulation. The default
+number of partitions in <a href="http://www.basho.com">Riak</a> is 64. The size
+of the set of partitions required to list all of the keys from a
+bucket when there are 64 partitions is 22 (just take my word for
+it). Assuming a uniform distribution of keys among the partitions,
+there would need to be at least 2179 objects in a bucket to trigger
+the intermediate buffering. The largest set of objects I tried in my
+manual testing was 2000, but fortunately the object set size is one of
+the inputs that the Quickcheck test for this code generates for me and
+when I ran the test it quickly found a case where the expected set of
+object keys did not match the actual set of keys returned.</p>
+
+<p>Now chances are good that a suite of traditional unit tests would have
+tested an object set greater than 2000, but what if the buffer size
+that triggered the intermediate buffering was 1000 or 10000. Or what if
+the number of partitions was set to 128 or 256 instead of 64. The
+point is that as the number of variables that affect the code
+under test increases, the number of test case permutations quickly
+becomes difficult to manage with traditional unit test suites and
+relies on the developer not to overlook any important
+cases.</p>
+
+<p>Instead with Quickcheck the developer describes the characteristics of
+the variables that affect the code and Quickcheck explores the
+permutations by generating values for the variables and searching for
+failing cases.</p>
+
+<h2>In Summary</h2>
+
+<p>Catching and fixing bugs in development saves time and
+money. Quickcheck helped me find and eliminate this bug early and I
+have a higher level of confidence that my changes are correct.  The
+case I described here was rather trivial, but it is illustrative of
+the power and usefulness of property-based testing. Creating
+Quickcheck tests may take more time than churning out a few unit test
+cases (especially as you ascend the learning curve), but this is time
+well spent and the investment will pay dividends.</p>
+
+<p>If you would like to have a look at the Quickcheck test I discussed in
+this post, you can find it
+<a href="https://github.com/basho/riak_kv/blob/master/test/keys_fsm_eqc.erl">here</a>. Happy
+testing!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Inertia]]></title>
+    <link href="http://kelly-mclaughlin.com/blog/2011/06/29/inertia/"/>
+    <updated>2011-06-29T00:00:00-06:00</updated>
+    <id>http://kelly-mclaughlin.com/blog/2011/06/29/inertia</id>
+    <content type="html"><![CDATA[<p>This is my third or fourth attempt at starting a blog. My past attempts have failed for a variety of reasons. My excuses range from being too busy or distracted to becoming too focused on tinkering with the blog engine to having all my time and energy consumed by a new baby. I am still very busy and there are a lot of other things vying for my attention, but I think this time will be different. My daughter is over eight months old now so I am getting more sleep and with the help of <a href="http://http://pages.github.com">github pages</a> and <a href="https://github.com/mojombo/jekyll">jekyll</a> I feel like this time I have enough inertia to succeed. I like the convenience of composing posts using <a href="http://daringfireball.net/projects/markdown">markdown</a> and now that I have the setup done and the layout finished, composing new posts should be extremely efficient. I have a backlog of things to write about and there are a lot of exciting things going on at <a href="http://www.basho.com">Basho</a> and with my continuing adventures with software that are bound to generate even more ideas. Until next time.</p>
+]]></content>
+  </entry>
+  
 </feed>
