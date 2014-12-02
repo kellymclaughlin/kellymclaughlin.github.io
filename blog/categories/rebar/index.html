@@ -5,13 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Running Riak With a Debug Version of the Erlang VM - kelly-mclaughlin.com</title>
+  <title>Category: Rebar - kelly-mclaughlin.com</title>
   <meta name="author" content="Kelly McLaughlin">
 
   
-  <meta name="description" content="In this post I describe how the easiest way to run
-Riak with a debug build of the Erlang
-VM. While I focus specifically on Riak, this procedure &hellip;">
+  <meta name="description" content="Category: Rebar">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +18,7 @@ VM. While I focus specifically on Riak, this procedure &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://kelly-mclaughlin.com/blog/2012/01/21/riak-debug-vm">
+  <link rel="canonical" href="http://kelly-mclaughlin.comblog/categories/rebar">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="http://feeds.feedburner.com/KellyMcLaughlin" rel="alternate" title="kelly-mclaughlin.com" type="application/atom+xml">
@@ -64,145 +62,35 @@ VM. While I focus specifically on Riak, this procedure &hellip;">
   <div id="main">
     <div id="content">
       <div>
-<article class="hentry" role="article">
+<article role="article">
   
   <header>
-    
-      <h1 class="entry-title">Running Riak With a Debug Version of the Erlang VM</h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-01-21T00:00:00-07:00" pubdate data-updated="true"></time>
-        
-           | <a href="#disqus_thread"
-             data-disqus-identifier="http://kelly-mclaughlin.com">Comments</a>
-        
-      </p>
+    <h1 class="entry-title">Category: Rebar</h1>
     
   </header>
-
-
-<div class="entry-content"><p>In this post I describe how the easiest way to run
-<a href="http://www.basho.com">Riak</a> with a debug build of the Erlang
-VM. While I focus specifically on Riak, this procedure should hold
-true for most Erlang projects that are set up for release builds using
-rebar.</p>
-
-<p>First, make sure the debug build of Erlang is the first in your
-path. If you have not built a debug-enabled Erlang VM, I covered how
-to accomplish that in a prior post and you can find it
-<a href="http://kelly-mclaughlin.com/2012/01/03/erlang-debug-vm.html">here</a>.</p>
-
-<p>Next navigate to your Riak repository and do a clean and release build
-of Riak.</p>
-
-<div>
-  <pre><code class='bash'>make clean rel</code></pre>
-</div>
-
-
-<p>Move to the Riak release directory and open the riak script in an editor.</p>
-
-<div>
-  <pre><code class='bash'>cd rel/riak
-emacs bin/riak</code></pre>
-</div>
-
-
-<p>Look for the line <code>EMU=beam</code>. It should be located somewhere around
-line 228 in the section for the <code>console</code> command. Change that line to
-<code>EMU=beam.debug</code> and save the file.</p>
-
-<p>Now you are ready to start up Riak. For this example I just start it
-with <em>console</em> instead of <em>start</em>.</p>
-
-<div>
-  <pre><code class='bash'>./bin/riak console</code></pre>
-</div>
-
-
-<p>You should notice the Erlang banner is slightly different than
-normal. Using the normal Erlang VM the banner looks something like
-this:</p>
-
-<div>
-  <pre><code class='erlang'>Erlang R15B (erts-5.9) [source] [64-bit] [smp:4:4] [async-threads:64] [kernel-poll:true]</code></pre>
-</div>
-
-
-<p>However using the debug-enabled VM, it should look something like the
-following:</p>
-
-<div>
-  <pre><code class='erlang'>Erlang R15B (erts-5.9) [source] [64-bit] [smp:4:4] [async-threads:64] [kernel-poll:true] [type-assertions] [debug-compiled] [lock-checking]</code></pre>
-</div>
-
-
-<p>And that&rsquo;s all there is to it. Once you have the debug-enabled Erlang
-VM built, it&rsquo;s very easy to get Riak up and running with it. It may go
-without saying, but Riak will run noticeably slower using the
-debug-enabled VM so please do not run in this manner in
-production. Happy debugging!</p>
-</div>
-
-
-  <footer>
-    <p class="meta">
-      
   
-
-<span class="byline author vcard">Posted by <span class="fn">Kelly McLaughlin</span></span>
-
-      
-
-
-
-
-
+  <div id="blog-archives" class="category">
 
 
 
   
+  <h2>2014</h2>
+
+<article>
+  
+<h1><a href="/blog/2014/12/02/platform-specific-build-options-with-rebar/">Platform-Specific Build Options With Rebar</a></h1>
+<time datetime="2014-12-02T10:48:46-07:00" pubdate><span class='month'>Dec</span> <span class='day'>02</span> <span class='year'>2014</span></time>
+
+<footer>
+  <span class="categories">posted in <a class='category' href='/blog/categories/erlang/'>Erlang,</a>, <a class='category' href='/blog/categories/rebar/'>Rebar</a></span>
+</footer>
 
 
-<time datetime="2012-01-21T00:00:00-07:00" pubdate data-updated="true"></time>
-      
+</article>
 
-
-    </p>
-    
-      <div class="sharing">
-  
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://kelly-mclaughlin.com/blog/2012/01/21/riak-debug-vm/" data-via="_klm" data-counturl="http://kelly-mclaughlin.com/blog/2012/01/21/riak-debug-vm/" >Tweet</a>
-  
-  
-  <div class="g-plusone" data-size="medium"></div>
-  
-  
 </div>
 
-    
-    <p class="meta">
-      
-        <a class="basic-alignment left" href="/blog/2012/01/03/erlang-debug-vm/" title="Previous Post: How to build a debug version of the Erlang VM">&laquo; How to build a debug version of the Erlang VM</a>
-      
-      
-        <a class="basic-alignment right" href="/blog/2012/07/27/emacs-daemon/" title="Next Post: Setting up the Emacs daemon on OS X">Setting up the Emacs daemon on OS X &raquo;</a>
-      
-    </p>
-  </footer>
+  
 </article>
 
 </div>

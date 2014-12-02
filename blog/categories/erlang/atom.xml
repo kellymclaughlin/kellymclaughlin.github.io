@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Erlang, | kelly-mclaughlin.com]]></title>
+  <link href="http://kelly-mclaughlin.com/blog/categories/erlang/atom.xml" rel="self"/>
+  <link href="http://kelly-mclaughlin.com/"/>
+  <updated>2014-12-02T15:54:53-07:00</updated>
+  <id>http://kelly-mclaughlin.com/</id>
+  <author>
+    <name><![CDATA[Kelly McLaughlin]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Platform-Specific Build Options With Rebar]]></title>
+    <link href="http://kelly-mclaughlin.com/blog/2014/12/02/platform-specific-build-options-with-rebar/"/>
+    <updated>2014-12-02T10:48:46-07:00</updated>
+    <id>http://kelly-mclaughlin.com/blog/2014/12/02/platform-specific-build-options-with-rebar</id>
+    <content type="html"><![CDATA[<p>Several months back someone reported an
+<a href="https://github.com/kellymclaughlin/druuid/issues/3">issue</a> when
+attempting to use
+<a href="https://github.com/kellymclaughlin/druuid"><code>druuid</code></a> as a dependency
+in an Elixir project.  At the time I was not able to look into it, but
+recently I circled back to dig deeper into the problem (described in
+more detail <a href="https://github.com/elixir-lang/elixir/issues/2189">here</a>)
+and in the process I stumbled across some useful rebar configuration
+options for projects that have platform-specific build requirements. I
+use rebar quite a bit, but I was not aware that these options
+existed so I wrote this in case other rebar users find themselves in a
+similar state of ignorance.</p>
+
+<p><code>Druuid</code> needs to differentiate between BSD and non-BSD systems during
+the <code>compile</code> and <code>clean</code> operations. This is due to a conflict with
+the OS-provided UUID library on BSD systems.  The original method used
+to achieve this was rebar&rsquo;s dynamic configuration capability. A
+rebar.config.script file was used to check the system architecture
+information using <code>rebar_utils:is_arch/1</code> and modify the rebar
+configuration appropriately based on the results (<a href="https://github.com/kellymclaughlin/druuid/pull/2">relevant github issue</a>). <a href="https://github.com/kellymclaughlin/druuid/blob/0.2/rebar.config.script">Here</a>
+is the full listing of the <code>rebar.config.script</code> file for reference.</p>
+
+<p>This solution certainly works, but it would be great if there was a
+way to use standard rebar configuration options to solve the problem
+and even better if anyone who wants to use the library, be it in
+an Erlang project or an Elixir project, could easily do so.</p>
+
+<p>Fortunately such configuration capabilities already exist in
+rebar. <code>Druuid</code> uses four rebar configuration directives to tailor the
+build environment and steps based on the platform.  These are as
+follows: <code>port_specs</code>, <code>port_env</code>, <code>pre_hooks</code>, <code>post_hooks</code>. Each
+option is specified in the <code>rebar.config</code> file as a pair where the
+first element is the option name and the second element is a list of
+tuples.</p>
+
+<p>For example, here is what a <code>port_env</code> entry might look like:</p>
+
+<p>```
+{port_env, [{&ldquo;CFLAGS&rdquo;, &ldquo;$CFLAGS -fPIC&rdquo;},</p>
+
+<pre><code>        {"DRV_CFLAGS", "$DRV_CFLAGS -Werror -I c_src/uuid-1.6.2"},
+        {"DRV_LDFLAGS", "$DRV_LDFLAGS c_src/uuid-1.6.2/.libs/libuuid.a"}
+</code></pre>
+
+<p>]}.
+```</p>
+
+<p>It turns out that the value tuples can be a pair as shown in the above
+example <strong>or</strong> they can be triples where the first element is a
+regular expression that is applied as a filter to the platform
+information. Let&rsquo;s see an example of that:</p>
+
+<p>```
+{port_env, [{&ldquo;CFLAGS&rdquo;, &ldquo;$CFLAGS -fPIC&rdquo;},</p>
+
+<pre><code>        {"(bsd)", "DRV_CFLAGS", "$DRV_CFLAGS -Werror"},
+        {"(bsd)", "DRV_LDFLAGS", "$DRV_LDFLAGS"},
+        {"^(?s)((?!bsd).)*$", "DRV_CFLAGS", "$DRV_CFLAGS -Werror -I c_src/uuid-1.6.2"},
+        {"^(?s)((?!bsd).)*$", "DRV_LDFLAGS", "$DRV_LDFLAGS c_src/uuid-1.6.2/.libs/libuuid.a"}
+</code></pre>
+
+<p>]}.
+```</p>
+
+<p>The <code>CFLAGS</code> value is applied to all platforms, but <code>DRV_CFLAGS</code> and
+<code>DRV_LDFLAGS</code> are selected based on whether the platform information
+does or does not contain the string <em>bsd</em>. This is very handy and can
+also be used for all of the other configuration options used by
+<code>druuid</code>. Let&rsquo;s see the final version of the <code>rebar.config</code> file that
+translates all of the behavior previously contained in the
+<code>rebar.config.script</code> file:</p>
+
+<p>```
+{port_specs, [{&ldquo;priv/druuid.so&rdquo;, [&ldquo;c_src/*.c&rdquo;]}]}.
+{port_env, [{&ldquo;CFLAGS&rdquo;, &ldquo;$CFLAGS -fPIC&rdquo;},</p>
+
+<pre><code>        {"(bsd)", "DRV_CFLAGS", "$DRV_CFLAGS -Werror"},
+        {"(bsd)", "DRV_LDFLAGS", "$DRV_LDFLAGS"},
+        {"^(?s)((?!bsd).)*$", "DRV_CFLAGS", "$DRV_CFLAGS -Werror -I c_src/uuid-1.6.2"},
+        {"^(?s)((?!bsd).)*$", "DRV_LDFLAGS", "$DRV_LDFLAGS c_src/uuid-1.6.2/.libs/libuuid.a"}
+</code></pre>
+
+<p>]}.
+{pre_hooks, [{&ldquo;^(?s)((?!bsd).)<em>$&rdquo;, compile, &ldquo;c_src/build_deps.sh&rdquo;}]}.
+{post_hooks, [{&ldquo;^(?s)((?!bsd).)</em>$&rdquo;, clean, &ldquo;c_src/build_deps.sh clean&rdquo;}]}.
+```</p>
+
+<p>This is much nicer than resorting to using rebar&rsquo;s dynamic
+configuration and as a bonus it works much better with Elixir&rsquo;s build
+tool, <a href="http://elixir-lang.org/getting_started/mix_otp/1.html">Mix</a>. If
+you want to explore how the regular expressions are treated inside
+rebar, look
+<a href="https://github.com/rebar/rebar/blob/2.5.1/src/rebar_core.erl#L507">here</a>
+for the hooks,
+<a href="https://github.com/rebar/rebar/blob/2.5.1/src/rebar_port_compiler.erl#L308">here</a>
+for the <code>port_specs</code>, and
+<a href="https://github.com/rebar/rebar/blob/2.5.1/src/rebar_port_compiler.erl#L484">here</a>
+for the <code>port_env</code> for the port options.</p>
+
+<p>I did not find any mention of these options in the rebar wiki. I did
+find some examples of the port options in the output of <code>rebar help
+compile</code>, but hopefully this post sheds some further light on their
+intended purpose. Also note that the information in this post is based
+on the <code>2.5.1</code> tag of rebar. Later tags or the work on
+<a href="https://github.com/rebar/rebar3">rebar3</a> may make some of this
+information obsolete.</p>
+]]></content>
+  </entry>
+  
+</feed>
