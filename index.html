@@ -9,11 +9,8 @@
   <meta name="author" content="Kelly McLaughlin">
 
   
-  <meta name="description" content="Several months back someone reported an
-issue when
-attempting to use
-druuid as a dependency
-in an Elixir project. At the time I was not able to look &hellip;">
+  <meta name="description" content="What in the world is Mix? Why would anyone want to do this? These are the sorts of questions that any readers of this post may be
+asking themselves &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -67,6 +64,463 @@ in an Elixir project. At the time I was not able to look &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/12/building-an-erlang-project-with-mix/">Building an Erlang Project With Mix</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-12T10:58:57-07:00" pubdate data-updated="true">Dec 12<span>th</span>, 2014</time>
+        
+           | <a href="/blog/2014/12/12/building-an-erlang-project-with-mix/#disqus_thread"
+             data-disqus-identifier="http://kelly-mclaughlin.com/blog/2014/12/12/building-an-erlang-project-with-mix/">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h3><em>What in the world is Mix? Why would anyone want to do this?</em></h3>
+
+<p>These are the sorts of questions that any readers of this post may be
+asking themselves based on the title. The answer to the former is that
+<a href="http://elixir-lang.org/getting_started/mix_otp/1.html">Mix</a> is the
+build tool of the Elixir ecosystem.  For me the answer to the second
+question is simply curiosity and this is a brief summary of my
+experience following that curiosity.</p>
+
+<p>As an Erlang developer for the last five years I admit to having paid
+very little attention to Elixir until very recently. The inspiration
+to actually take a closer look came from listening to an interview
+with José Valim on an
+<a href="http://www.functionalgeekery.com/episode-17-jose-valim/">episode</a> of
+the <a href="http://www.functionalgeekery.com/">Functional Geekery</a>
+podcast. There were several aspects of Elixir discussed that piqued my
+interest and one of them was the build tool known as Mix.</p>
+
+<p>Mix provides several features that are appealing having experienced a
+lot of frustration with <a href="https://github.com/rebar/rebar">rebar</a>, the
+most popular build tool for Erlang projects. Most of the frustration
+with rebar comes from the dependency handling and so it was very
+interesting to see what Mix offered in this area in particular. Some
+of the features I found notable were:</p>
+
+<ul>
+<li>Built-in dependency locking behavior to aid in repeatable builds.</li>
+<li>Ability to resolve a dependency conflict in the top level
+configuration by explicitly <em>overriding</em> any other version of the
+same dependency encountered in the dependency tree.</li>
+<li>The concept of environments (<em>dev</em>, <em>test</em>, and <em>prod</em> are the defaults)
+to facilitate things like omitting test dependencies from the
+development or production builds.</li>
+<li>An umbrella mode for creating new projects that do not directly
+contain source code, but are compositions of other applications and
+dependencies.</li>
+<li>Ability to specify binary packages from the
+<a href="https://hex.pm">Hex package manager</a> as dependencies in addition to
+git repositories.</li>
+</ul>
+
+
+<p>In Erlang projects that use rebar some of these things can be
+accomplished with plugins or various other workarounds, but I like
+that they are baked into Mix. I suspect many of these features will be
+part of <a href="https://github.com/rebar/rebar3">rebar3</a>, but it is still in
+the development stages whereas Mix can be used today. Another benefit
+from using Mix is the possibility for people to contribute to a
+project using either Erlang or Elixir. This certainly will not be
+applicable to all projects or desired by some, but in general I do
+count greater flexibility as a benefit.</p>
+
+<h3>Specifying a Mix configuration</h3>
+
+<p>After hearing the description of Mix on the podcast as mentioned
+previously I decided to play around with it a bit. I was very
+interested in the fact that Mix could be used to build regular
+Erlang projects so I decided to test out what it would take to
+actually make this happen for a real project. I have quite a bit of
+familiarity with Basho&rsquo;s <a href="https://github.com/basho/riak_cs">riak_cs</a>
+project so I decided to use it as my test project.</p>
+
+<p>First here is the <code>rebar.config</code> file from <code>riak_cs</code>:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{sub_dirs, ["rel"]}.
+</span><span class='line'>
+</span><span class='line'>{require_otp_vsn, "R15|R16"}.
+</span><span class='line'>
+</span><span class='line'>{cover_enabled, true}.
+</span><span class='line'>
+</span><span class='line'>%% EDoc options
+</span><span class='line'>{edoc_opts, [preprocess]}.
+</span><span class='line'>
+</span><span class='line'>{lib_dirs, ["deps", "apps"]}.
+</span><span class='line'>
+</span><span class='line'>{erl_opts, [debug_info, warnings_as_errors, {parse_transform, lager_transform}]}.
+</span><span class='line'>
+</span><span class='line'>{xref_checks, []}.
+</span><span class='line'>{xref_queries,
+</span><span class='line'> [{"(XC - UC) || (XU - X - B - \"(^riak$|^riak_cs_dummy_reader$|^riak_core_bucket$|^app_helper$|^riakc_pb_socket_fake$|^riak_object$|^riak_repl_pb_api$|^riak_cs_multibag$)\" : Mod)", []}]}.
+</span><span class='line'>{xref_queries_ee,
+</span><span class='line'> [{"(XC - UC) || (XU - X - B - \"(^riak$|^riak_cs_dummy_reader$|^riak_core_bucket$|^app_helper$|^riakc_pb_socket_fake$|^riak_object$)\" : Mod)", []}]}.
+</span><span class='line'>
+</span><span class='line'>{reset_after_eunit, true}.
+</span><span class='line'>
+</span><span class='line'>{plugin_dir, ".plugins"}.
+</span><span class='line'>{plugins, [rebar_test_plugin, rebar_lock_deps_plugin]}.
+</span><span class='line'>
+</span><span class='line'>{client_test, [
+</span><span class='line'>               {test_paths, ["client_tests/erlang"]},
+</span><span class='line'>               {test_output, ".client_test"}
+</span><span class='line'>              ]}.
+</span><span class='line'>{int_test, [
+</span><span class='line'>            {test_paths, ["int_test"]},
+</span><span class='line'>            {test_output, ".int_test"}
+</span><span class='line'>           ]}.
+</span><span class='line'>{riak_test, [
+</span><span class='line'>             {test_paths, ["riak_test/tests", "riak_test/src",
+</span><span class='line'>                           "deps/riak_cs_multibag/riak_test/tests",
+</span><span class='line'>                           "deps/riak_cs_multibag/riak_test/src"]},
+</span><span class='line'>             {test_output, "riak_test/ebin"}
+</span><span class='line'>            ]}.
+</span><span class='line'>
+</span><span class='line'>{deps, [
+</span><span class='line'>        {node_package, "1.3.8", {git, "git://github.com/basho/node_package", {tag, "1.3.8"}}},
+</span><span class='line'>        {getopt, ".*", {git, "git://github.com/jcomellas/getopt.git", {tag, "v0.4.3"}}},
+</span><span class='line'>        {webmachine, ".*", {git, "git://github.com/basho/webmachine", {tag, "1.10.3"}}},
+</span><span class='line'>        {riakc, ".*", {git, "git://github.com/basho/riak-erlang-client", {tag, "1.4.2"}}},
+</span><span class='line'>        {lager, ".*", {git, "git://github.com/basho/lager", {tag, "2.0.3"}}},
+</span><span class='line'>        {lager_syslog, ".*", {git, "git://github.com/basho/lager_syslog", {tag, "2.0.3"}}},
+</span><span class='line'>        {eper, ".*", {git, "git://github.com/basho/eper.git", "0.78"}},
+</span><span class='line'>        {druuid, ".*", {git, "git://github.com/kellymclaughlin/druuid.git", {tag, "0.2"}}},
+</span><span class='line'>        {velvet, "1.3.*", {git, "git://github.com/basho/velvet", "4bb0fd664ff065c4082ca8dd2e0683e920537d15"}},
+</span><span class='line'>        {poolboy, "0.8.*", {git, "git://github.com/basho/poolboy", "0.8.1p2"}},
+</span><span class='line'>        {folsom, ".*", {git, "git://github.com/boundary/folsom", {tag, "0.8.1"}}},
+</span><span class='line'>        {cluster_info, ".*", {git, "git://github.com/basho/cluster_info", {tag, "1.2.4"}}},
+</span><span class='line'>        {xmerl, ".*", {git, "git://github.com/shino/xmerl", "b35bcb05abaf27f183cfc3d85d8bffdde0f59325"}},
+</span><span class='line'>        {erlcloud, ".*", {git, "git://github.com/basho/erlcloud.git", {tag, "0.4.4"}}},
+</span><span class='line'>        {rebar_lock_deps_plugin, ".*", {git, "git://github.com/seth/rebar_lock_deps_plugin.git", {tag, "3.1.0"}}}
+</span><span class='line'>       ]}.
+</span><span class='line'>
+</span><span class='line'>{deps_ee, [
+</span><span class='line'>           {riak_repl_pb_api,".*",{git,"git@github.com:basho/riak_repl_pb_api.git", {tag, "0.2.5"}}},
+</span><span class='line'>           {riak_cs_multibag,".*",{git,"git@github.com:basho/riak_cs_multibag.git", {branch, "master"}}}
+</span><span class='line'>          ]}.</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now here is the mostly equivalent translation to a <code>mix.exs</code> file:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>defmodule CS.Mixfile do
+</span><span class='line'>  use Mix.Project
+</span><span class='line'>
+</span><span class='line'>  def project do
+</span><span class='line'>    [app: :riak_cs,
+</span><span class='line'>     version: "1.5.2",
+</span><span class='line'>     compilers: [:erlang, :app],
+</span><span class='line'>     erlc_options: [{:parse_transform, :lager_transform}],
+</span><span class='line'>     deps: deps]
+</span><span class='line'>  end
+</span><span class='line'>
+</span><span class='line'>  def application do
+</span><span class='line'>    [applications: [:kernel,
+</span><span class='line'>                    :stdlib,
+</span><span class='line'>                    :inets,
+</span><span class='line'>                    :crypto,
+</span><span class='line'>                    :mochiweb,
+</span><span class='line'>                    :webmachine,
+</span><span class='line'>                    :poolboy,
+</span><span class='line'>                    :lager,
+</span><span class='line'>                    :cluster_info,
+</span><span class='line'>                    :folsom]]
+</span><span class='line'>  end
+</span><span class='line'>
+</span><span class='line'>  defp deps do
+</span><span class='line'>    [{:node_package, github: "basho/node_package", tag: "1.3.8", compile: "../../rebar compile"},
+</span><span class='line'>     {:getopt, github: "jcomellas/getopt", tag: "v0.4.3"},
+</span><span class='line'>     {:ibrowse, github: "cmullaparthi/ibrowse", tag: "v4.0.1", override: true},
+</span><span class='line'>     {:webmachine, github: "basho/webmachine", tag: "1.10.6"},
+</span><span class='line'>     {:riakc, github: "basho/riak-erlang-client", tag: "1.4.2"},
+</span><span class='line'>     {:lager, github: "basho/lager", tag: "2.0.3", override: true},
+</span><span class='line'>     {:lager_syslog, github: "basho/lager_syslog", tag: "2.0.3"},
+</span><span class='line'>     {:eper, gippthub: "basho/eper", tag: "0.78"},
+</span><span class='line'>     {:meck, github: "eproxus/meck", tag: "0.8.2", override: true},
+</span><span class='line'>     {:druuid, github: "kellymclaughlin/druuid", tag: "0.3"},
+</span><span class='line'>     {:velvet, github: "basho/velvet", ref: "4bb0fd664ff065c4082ca8dd2e0683e920537d15"},
+</span><span class='line'>     {:poolboy, github: "devinus/poolboy", tag: "1.4.1"},
+</span><span class='line'>     {:folsom, github: "boundary/folsom", tag: "0.8.1"},
+</span><span class='line'>     {:cluster_info, github: "basho/cluster_info", tag: "1.2.4"},
+</span><span class='line'>     {:erlcloud, github: "basho/erlcloud", tag: "0.4.4", only: :test}
+</span><span class='line'>    ]
+</span><span class='line'>  end
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The two files are very similar, but the thing that sticks out most is the
+cleaniness of the dependency specification in the Mix file versus the
+rebar configuration. The <code>github</code> shorthand is very nice since it is the
+most common home for Erlang projects. Also, notice that Mix gathers the
+information to generate the project&rsquo;s <code>.app</code> file from information in
+the <code>mix.exs</code> file rather than an <code>app.src</code> file.</p>
+
+<p>The dependencies that specify <code>override: true</code> are ones that had
+version conflicts and I was able to select the correct version
+explicitly at the top level. This is also the reason that the set of
+dependencies specified differs slightly between the rebar and Mix
+configurations.</p>
+
+<p>In order to build the project I also had to specify a basic <code>mix.exs</code>
+file in the apps/riak_cs directory. Here is the listing of that file:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Code.require_file "mix.exs", "../.."
+</span><span class='line'>
+</span><span class='line'>defmodule CS.App.Mixfile do
+</span><span class='line'>  use Mix.Project
+</span><span class='line'>
+</span><span class='line'>  def project do
+</span><span class='line'>    []
+</span><span class='line'>  end
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Testing it out</h3>
+
+<p>Elixir and Mix require at least Erlang 17 so I did have to alter the
+versions some of the dependencies in order to get a working build due
+to some version-related build errors and for some of the Basho
+dependencies I had to manually edit the rebar.config file to allow
+using version 17 or disable <code>warnings_as_errors</code> (also related to
+building with Erlang 17). Beyond that everything built as expected with
+very minimal overall effort.</p>
+
+<p>Here are the steps to follow to build the project:</p>
+
+<ol>
+<li><code>mix deps.get</code></li>
+<li>
+Edit <code>deps/velvet/rebar.config</code> in the following manner:
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>diff --git a/rebar.config b/rebar.config
+</span><span class='line'>index 9a03432..56d7170 100644
+</span><span class='line'>--- a/rebar.config
+</span><span class='line'>+++ b/rebar.config
+</span><span class='line'>@@ -1,10 +1,10 @@
+</span><span class='line'>-{require_otp_vsn, "R14B0[234]|R15|R16"}.
+</span><span class='line'>+{require_otp_vsn, "R14B0[234]|R15|R16|17"}.
+</span><span class='line'>
+</span><span class='line'> {cover_enabled, true}.
+</span><span class='line'>
+</span><span class='line'> {lib_dirs, ["apps"]}.
+</span><span class='line'>
+</span><span class='line'>-{erl_opts, [debug_info, warnings_as_errors, {parse_transform, lager_transform}]}.
+</span><span class='line'>+{erl_opts, [debug_info, {parse_transform, lager_transform}]}.
+</span><span class='line'>
+</span><span class='line'>{reset_after_eunit, true}.</span></code></pre></td></tr></table></div></figure>
+</li>
+<li>
+Edit <code>deps/riakc/rebar.config</code> in the following manner:
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>diff --git a/rebar.config b/rebar.config
+</span><span class='line'>index f09a602..9765dc3 100644
+</span><span class='line'>--- a/rebar.config
+</span><span class='line'>+++ b/rebar.config
+</span><span class='line'>@@ -1,6 +1,6 @@
+</span><span class='line'> {cover_enabled, true}.
+</span><span class='line'> {eunit_opts, [verbose]}.
+</span><span class='line'>-{erl_opts, [warnings_as_errors, debug_info]}.
+</span><span class='line'>+{erl_opts, [debug_info]}.
+</span><span class='line'> {deps, [
+</span><span class='line'>         {riak_pb, ".*", {git, "git://github.com/basho/riak_pb", {tag, "1.4.4.0"}}}
+</span><span class='line'>        ]}.</span></code></pre></td></tr></table></div></figure>
+</li>
+ <li><code>mix deps.compile && mix compile</code></li>
+</ol>
+
+
+<p>That is all there is to it. The results should be in the local <code>_build</code>
+directory.</p>
+
+<h3>Conclusion and further explorations</h3>
+
+<p>Mix appears to be a well-implemented, flexible build tool for building
+Elixir or Erlang projects. From an Erlang developer&rsquo;s perspective, it
+definitely addresses some pain points that frequently arise with
+dependency handling with rebar.</p>
+
+<p>I also like that the build tool is a core part of the Elixir
+ecosystem. Many Erlang projects include a copy of the rebar executable
+as part of the git repository because rebar is not the official Erlang
+build tool and is not distributed as part of the language
+installation. This, in my view, is a problematic and sloppy solution so
+Elixir definitely improves upon that with Mix.</p>
+
+<p>I have not explored how Elixir/Mix handle interaction with
+<a href="http://www.erlang.org/doc/man/reltool.html">reltool</a> for creating
+releases yet. An interesting next step will be to explore this more
+and attempt to get an actual release of the project created. One missing
+thing from the <code>rebar.config</code> in the example of <code>riak_cs</code> is the
+handling of the rebar plugin for executing customized testing
+functions. Translating the plugin actions into Mix tasks would be
+another interesting learning experience.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -800,6 +1254,10 @@ testing!</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/12/12/building-an-erlang-project-with-mix/">Building an Erlang Project With Mix</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/12/02/platform-specific-build-options-with-rebar/">Platform-Specific Build Options With Rebar</a>
       </li>
     
@@ -813,10 +1271,6 @@ testing!</p>
     
       <li class="post">
         <a href="/blog/2012/01/03/erlang-debug-vm/">How to Build a Debug Version of the Erlang VM</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2011/07/08/quickcheck-efficacy/">A Quickcheck in Time Saves Nine</a>
       </li>
     
   </ul>
